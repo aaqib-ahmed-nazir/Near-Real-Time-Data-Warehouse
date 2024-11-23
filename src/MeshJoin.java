@@ -9,7 +9,8 @@ import java.io.FileReader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Scanner;
 
-public class MeshJoin {
+// Constants for MESHJOIN
+public class MeshJoin {    
     private static final int BUFFER_SIZE = 1000;
     private static final int NUM_THREADS = 4;
 
@@ -30,15 +31,26 @@ public class MeshJoin {
     private Queue<Chunk> queue;
     private List<Transaction> streamBuffer;
 
-    // Add class members for connection and prepared statement
+    // Connection for Data Warehouse
     private Connection dwConnection;
-    private PreparedStatement pstmt;
+    private PreparedStatement pstmt; // PreparedStatement for batch inserts
     private static final int BATCH_SIZE = 1000;
 
-    // Add a Set to track inserted orderIds
     private Set<Integer> insertedOrderIds;
 
     public MeshJoin(String masterDbUrl, String dwDbUrl, String user, String pass) {
+        /* 
+            parameters: 
+                - masterDbUrl - URL of the master database
+                - dwDbUrl - URL of the Data Warehouse
+                - user - database username
+                - pass - database password
+
+            returns: void
+
+            This function initializes the MeshJoin object with the provided database configurations.
+        */
+        
         this.masterDbUrl = masterDbUrl;
         this.dwDbUrl = dwDbUrl;
         this.user = user;
@@ -50,11 +62,11 @@ public class MeshJoin {
         streamBuffer = new ArrayList<>();
         insertedOrderIds = ConcurrentHashMap.newKeySet();
         try {
-            // Use standard JDBC connection
+            // Establishibng connection to Data Warehouse
             dwConnection = DriverManager.getConnection(dwDbUrl, user, pass);
             dwConnection.setAutoCommit(false);
 
-            // Load existing ORDER_IDs from MERGED_DATA
+            // Getting existing orderIds from the Data Warehouse
             String existingIdsQuery = "SELECT ORDER_ID FROM MERGED_DATA";
             try (Statement stmt = dwConnection.createStatement();
                     ResultSet rs = stmt.executeQuery(existingIdsQuery)) {
@@ -74,6 +86,7 @@ public class MeshJoin {
         }
     }
 
+    // Transaction class for storing transaction data
     static class Transaction {
         int orderId;
         Date orderDate;
@@ -84,6 +97,8 @@ public class MeshJoin {
         int timeId;
     }
 
+
+    // Chunk class for storing a partition of transactions
     static class Chunk {
         List<Transaction> transactions;
         int partitionsSeen;
@@ -95,6 +110,15 @@ public class MeshJoin {
     }
 
     private List<Map<String, Object>> loadMasterDataPartition(Connection conn, int offset) throws SQLException {
+
+        /*
+            parameters: 
+                - conn - Connection object to the master database
+                - offset - offset for loading the partition
+
+            returns: List<Map<String, Object>> - partition of master data records
+         */
+        
         List<Map<String, Object>> partition = new ArrayList<>();
         // Load only products table data
         String sql = "SELECT * FROM products LIMIT ? OFFSET ?";
@@ -121,6 +145,15 @@ public class MeshJoin {
     }
 
     private Map<String, Object> getCustomerData(int customerId, Connection conn) throws SQLException {
+
+        /*
+            parameters: 
+                - customerId - ID of the customer
+                - conn - Connection object to the master database
+
+            returns: Map<String, Object> - customer data for the given customerId
+         */
+
         String sql = "SELECT customer_name, gender FROM customers WHERE customer_id = ?";
         Map<String, Object> customerData = new HashMap<>();
 
@@ -199,7 +232,7 @@ public class MeshJoin {
     }
 
     private String mapGender(String gender) {
-        return gender.trim().substring(0, 1).toUpperCase(); // Convert "Male"/"Female" to "M"/"F"
+        return gender.trim().substring(0, 1).toUpperCase(); 
     }
 
     private void insertMergedRecordBatch(Transaction transaction, Map<String, Object> masterRecord, Connection conn)
@@ -222,6 +255,7 @@ public class MeshJoin {
             return;
         }
 
+        // Insert merged record into Data Warehouse
         pstmt.setInt(1, transaction.orderId);
         pstmt.setDate(2, transaction.orderDate);
         pstmt.setTime(3, transaction.orderTime);
@@ -241,6 +275,15 @@ public class MeshJoin {
     }
 
     private void executeBatch() {
+        
+        /*
+            parameters: void
+
+            returns: void
+
+            This function executes the batch insert operation on the Data Warehouse.
+         */
+
         try {
             pstmt.executeBatch();
             dwConnection.commit();
@@ -256,8 +299,19 @@ public class MeshJoin {
     }
 
     public void executeJoin(String transactionsCsvPath) {
+       
+        /*
+            parameters: 
+                - transactionsCsvPath - path to the transactions CSV file
+
+            returns: void
+
+            This function executes the MESHJOIN operation by processing the transactions CSV file.
+         */
+
         System.out.println("Starting MESHJOIN operation...");
         try (Connection masterConn = DriverManager.getConnection(masterDbUrl, user, pass)) {
+            
             // Get total number of master data records
             int totalRecords = getTotalMasterRecords(masterConn);
             int numPartitions = (int) Math.ceil((double) totalRecords / BUFFER_SIZE);
@@ -273,12 +327,14 @@ public class MeshJoin {
                 String line;
                 int processedLines = 0;
                 int skippedLines = 0;
+                
                 // Skip header row
                 br.readLine();
 
                 while ((line = br.readLine()) != null) {
                     try {
                         Transaction transaction = parseTransaction(line);
+                        
                         if (transaction != null) { // Only add if parsing was successful
                             streamBuffer.add(transaction);
                             processedLines++;
@@ -299,6 +355,7 @@ public class MeshJoin {
                         skippedLines++;
                     }
                 }
+
                 // Process remaining transactions
                 if (!streamBuffer.isEmpty()) {
                     processStreamBuffer();
@@ -321,6 +378,14 @@ public class MeshJoin {
     }
 
     private int getTotalMasterRecords(Connection conn) throws SQLException {
+
+        /*
+            parameters: 
+                - conn - Connection object to the master database
+
+            returns: int - total number of records in the master database
+         */
+
         try (Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM products")) {
             rs.next();
@@ -329,6 +394,14 @@ public class MeshJoin {
     }
 
     private Transaction parseTransaction(String line) {
+
+        /*
+            parameters: 
+                - line - a line from the transactions CSV file
+
+            returns: Transaction - a Transaction object parsed from the input line
+         */
+
         try {
             Transaction t = new Transaction();
             String[] parts = line.split(",");
@@ -337,7 +410,7 @@ public class MeshJoin {
             }
             t.orderId = Integer.parseInt(parts[0].trim());
 
-            // Validate and parse ORDER_DATE and ORDER_TIME
+            // Validating and parse ORDER_DATE and ORDER_TIME
             String orderDateTimeStr = parts[1].trim();
             try {
                 // Define expected datetime format
@@ -363,6 +436,15 @@ public class MeshJoin {
     }
 
     private void processStreamBuffer() {
+
+        /*
+            parameters: void
+
+            returns: void
+
+            This function processes the stream buffer by adding the transactions to the queue and hashTable.
+         */
+
         Chunk chunk = new Chunk(new ArrayList<>(streamBuffer));
         queue.add(chunk);
 
@@ -375,6 +457,15 @@ public class MeshJoin {
     }
 
     public void close() {
+        
+        /*
+            parameters: void
+
+            returns: void
+
+            This function closes the PreparedStatement and Connection objects.
+         */
+
         try {
             if (pstmt != null)
                 pstmt.close();
@@ -386,6 +477,15 @@ public class MeshJoin {
     }
 
     public static void main(String[] args) {
+
+        /*
+            parameters: void
+
+            returns: void
+
+            This function initializes the MESHJOIN operation by taking user input for database configurations.
+         */
+
         Scanner scanner = new Scanner(System.in);
 
         System.out.print("Enter master database URL (e.g., jdbc:mysql://localhost:3306/master_database): ");

@@ -4,29 +4,49 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class load_data {
-    // Helper method to parse CSV lines with quotes
     private static String[] parseCsvLine(String line) {
+        /* 
+            parameters: line - the line to be parsed
+            
+            returns: an array of strings containing the parsed values
+            
+            This function is used to parse a CSV line that may contain commas within
+        */
+
         List<String> result = new ArrayList<>();
         boolean inQuotes = false;
         StringBuilder currentStr = new StringBuilder();
-        
+
         for (int i = 0; i < line.length(); i++) {
             char ch = line.charAt(i);
             if (ch == '"') {
                 inQuotes = !inQuotes;
-            } else if (ch == ',' && !inQuotes) {
+            }
+
+            else if (ch == ',' && !inQuotes) {
                 result.add(currentStr.toString().trim().replace("\"", ""));
                 currentStr = new StringBuilder();
-            } else {
+            }
+
+            else {
                 currentStr.append(ch);
             }
         }
         result.add(currentStr.toString().trim().replace("\"", ""));
-        
+
         return result.toArray(new String[0]);
     }
 
     public static void main(String[] args) {
+
+        /* 
+            parameters: args - command line arguments
+            
+            returns: void
+            
+            This function is used to load data from CSV files into the database
+        */
+
         String jdbcURL = "jdbc:mysql://localhost:3306/master_database";
         String username = "root";
         String password = "12345678";
@@ -36,18 +56,18 @@ public class load_data {
             Connection connection = DriverManager.getConnection(jdbcURL, username, password);
             System.out.println("Connected to the database. :)");
 
-            // Clear existing data
+            // Clearing the existing data
             Statement stmt = connection.createStatement();
             stmt.execute("TRUNCATE TABLE customers");
             stmt.execute("TRUNCATE TABLE products");
 
-            // Load customers data
+            // Loading customers data into the database
             String customersFile = "/Users/aaqibnazir/Documents/uni/DWH/AaqibAhmedNazir_22i1920_Project/src/data/customers_data.csv";
             BufferedReader customersReader = new BufferedReader(new FileReader(customersFile));
             String line;
             customersReader.readLine(); // Skip header
             while ((line = customersReader.readLine()) != null) {
-                String[] nextLine = parseCsvLine(line);  // Changed from split(",") to parseCsvLine
+                String[] nextLine = parseCsvLine(line); // Parsing the CSV line
                 int customerId = Integer.parseInt(nextLine[0].trim());
                 String customerName = nextLine[1].trim();
                 String gender = nextLine[2].trim();
@@ -61,7 +81,7 @@ public class load_data {
             customersReader.close();
             System.out.println("Customers data has been inserted.");
 
-            // Load products data
+            // Loading products data into the database
             String productsFile = "/Users/aaqibnazir/Documents/uni/DWH/AaqibAhmedNazir_22i1920_Project/src/data/products_data.csv";
             BufferedReader productsReader = new BufferedReader(new FileReader(productsFile));
             productsReader.readLine(); // Skip header
