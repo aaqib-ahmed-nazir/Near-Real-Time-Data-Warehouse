@@ -6,6 +6,8 @@ This project implements a near-real-time Data Warehouse (DW) prototype for METRO
 ## Project Structure
 The project is structured as follows:
 
+    ├── proprocessing
+    │   ├── proprocessing.ipynb # optional to fix the supplierID issues in products_data.csv
     ├── sql
     │   ├── create_master_data.sql
     │   ├── create_dw.sql
