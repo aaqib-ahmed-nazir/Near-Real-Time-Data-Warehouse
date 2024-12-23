@@ -1,9 +1,0 @@
-
-complie_load_data = javac -cp /Users/aaqibnazir/Documents/uni/DWH/AaqibAhmedNazir_22i1920_Project/src/mysql-connector-java-8.0.16.jar:. load_data.java
-run_mesh_join = java -cp /Users/aaqibnazir/Documents/uni/DWH/AaqibAhmedNazir_22i1920_Project/src/mysql-connector-java-8.0.16.jar:. load_data
-
-compile_mesh_join= javac -cp /Users/aaqibnazir/Documents/uni/DWH/AaqibAhmedNazir_22i1920_Project/src/mysql-connector-java-8.0.16.jar:. MeshJoin.java
-run_mesh_join = java -cp /Users/aaqibnazir/Documents/uni/DWH/AaqibAhmedNazir_22i1920_Project/src/mysql-connector-java-8.0.16.jar:. MeshJoin 
-
-master_database = jdbc:mysql://localhost:3306/master_database
-dw = jdbc:mysql://localhost:3306/dw
