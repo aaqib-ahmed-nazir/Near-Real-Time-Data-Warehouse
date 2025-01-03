@@ -1,4 +1,4 @@
-# Designing and Implementing a Near-Real-Time Data Warehouse for METRO Pakistan
+# Designing and Implementing a Near-Real-Time Data Warehouse 
 
 ## Project Overview
 This project implements a near-real-time Data Warehouse (DW) prototype for METRO shopping stores in Pakistan. It integrates transactional data from various sources, enriches it with Master Data (MD) using the MESHJOIN algorithm, and enables advanced business intelligence through OLAP queries. The project is built using Java and SQL and structured as follows:
