@@ -43,7 +43,7 @@ Before running the project, ensure you have the following installed:
 Clone the repository or download the ZIP file:
     
 ```bash
-git clone https://github.com/aaqib-ahmed-nazir/AaqibAhmedNazir_22i1920_Project.git
+https://github.com/aaqib-ahmed-nazir/Near-Real-Time-Data-Warehouse.git
 ```
     
 ### 2. Import the Project in Eclipse
